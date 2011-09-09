@@ -174,14 +174,14 @@ val api_version : int
   (** Current version of the application interface, that is, the API
       described by this library.
 
-      This value should be set in the {!config} record passed to
-      {!create}.
+      This value should be set in the {!session_config} record passed
+      to {!session_create}.
 
       If an (upgraded) library is no longer compatible with this
-      version the error {!Spotify_error.BAD_API_VERSION} will be
-      raised from {!create}. Future versions of the library will
-      provide you with some kind of mechanism to request an updated
-      version of the library. *)
+      version the error {!ERROR_BAD_API_VERSION} will be raised from
+      {!session_create}. Future versions of the library will provide
+      you with some kind of mechanism to request an updated version of
+      the library. *)
 
 (** Describes the current state of the connection. *)
 type connection_state =
@@ -379,13 +379,13 @@ class session_callbacks : object
   method notify_main_thread : session -> unit
     (** Called when processing needs to take place on the main thread.
 
-        You need to call {!process_events} in the main thread to get
-        libspotify to do more work. Failure to do so may cause request timeouts,
-        or a lost connection.
+        You need to call {!session_process_events} in the main thread
+        to get libspotify to do more work. Failure to do so may cause
+        request timeouts, or a lost connection.
 
         @param session Session
 
-        @note This function is called from an internal session thread,
+        Note: This function is called from an internal session thread,
         you need to have proper synchronization!
     *)
 
@@ -406,10 +406,10 @@ class session_callbacks : object
 	library if your output buffers are saturated. The library will
 	retry delivery in about 100ms.
 
-	@note This function is called from an internal session thread,
+	Note: This function is called from an internal session thread,
 	you need to have proper synchronization!
 
-	@note This function must never block. If your output buffers
+	Note: This function must never block. If your output buffers
 	are full you must return 0 to signal that the library should
 	retry delivery in a short while. *)
 
@@ -431,7 +431,7 @@ class session_callbacks : object
     (** End of track. Called when the currently played track has
         reached its end.
 
-        @note This function is invoked from the same internal thread
+        Note: This function is invoked from the same internal thread
 	as the music delivery callback
 
 	@param session Session
@@ -441,7 +441,7 @@ class session_callbacks : object
     (** Streaming error. Called when streaming cannot start or
         continue.
 
-        @note This function is invoked from the main thread
+        Note: This function is invoked from the main thread
 
         @param session Session
         @param error One of the following errors:
@@ -460,13 +460,13 @@ class session_callbacks : object
   method start_playback : session -> unit
     (** Called when audio playback should start.
 
-        @note For this to work correctly the application must also
+        Note: For this to work correctly the application must also
         implement {!get_audio_buffer_stats}
 
-        @note This function is called from an internal session thread,
+        Note: This function is called from an internal session thread,
         you need to have proper synchronization!
 
-        @note This function must never block.
+        Note: This function must never block.
 
 	@param session Session
     *)
@@ -474,13 +474,13 @@ class session_callbacks : object
   method stop_playback : session -> unit
     (** Called when audio playback should stop.
 
-        @note For this to work correctly the application must also
+        Note: For this to work correctly the application must also
         implement {!get_audio_buffer_stats}.
 
-        @note This function is called from an internal session thread,
+        Note: This function is called from an internal session thread,
         you need to have proper synchronization!.
 
-        @note This function must never block.
+        Note: This function must never block.
 
 	@param session Session
     *)
@@ -488,10 +488,10 @@ class session_callbacks : object
   method get_audio_buffer_stats : session -> audio_buffer_stats
     (** Called to query application about its audio buffer
 
-        @note This function is called from an internal session thread,
+        Note: This function is called from an internal session thread,
         you need to have proper synchronization!
 
-        @note This function must never block.
+        Note: This function must never block.
 
 	@param session Session
 	@return Stats
@@ -543,9 +543,9 @@ type session_config = {
       space usage at the expense of needing to request metadata from
       Spotify backend when loading list *)
 
-  initially_unload_playlists : bool
+  initially_unload_playlists : bool;
   (** Avoid loading playlists into RAM on startup. See
-      {!Spotify_playlist.is_in_ram} for more details. *)
+      {!playlist_is_in_ram} for more details. *)
 }
 
 val session_create : session_config -> session
@@ -558,10 +558,10 @@ val session_create : session_config -> session
       @param config The configuration to use for the session
       @return a new session.
 
-      @raise {!ERROR_BAD_API_VERSION}
-      @raise {!ERROR_BAD_USER_AGENT}
-      @raise {!ERROR_BAD_APPLICATION_KEY}
-      @raise {!ERROR_API_INITIALIZATION_FAILED}
+      @raise Error {!ERROR_BAD_API_VERSION}
+      @raise Error {!ERROR_BAD_USER_AGENT}
+      @raise Error {!ERROR_BAD_APPLICATION_KEY}
+      @raise Error {!ERROR_API_INITIALIZATION_FAILED}
   *)
 
 val session_release : session -> unit
@@ -576,7 +576,7 @@ val session_login : session -> username : string -> password : string -> remembe
       complete.
 
       An application MUST NEVER store the user's password in clear
-      text. If automatic relogin is required, use {!relogin}.
+      text. If automatic relogin is required, use {!session_relogin}.
 
       @param session Your session object
       @param username The username to log in
@@ -591,12 +591,12 @@ val session_relogin : session -> unit
 
       @param session Your session object
 
-      @raise {!ERROR_OK}
-      @raise {!ERROR_NO_CREDENTIALS}
+      @raise Error {!ERROR_NO_CREDENTIALS}
   *)
 
 val session_remembered_user : session -> string option
-  (** Get username of the user that will be logged in via {!relogin}.
+  (** Get username of the user that will be logged in via
+      {!session_relogin}.
 
       @param session Your session object
       @return The username, if any, or [None] if no credentials are
@@ -653,16 +653,16 @@ val session_player_load : session -> track -> unit
   (** Loads the specified track.
 
       After successfully loading the track, you have the option of
-      running {!player_play} directly, or using {!player_seek} first.
-      When this call returns, the track will have been loaded, unless
-      an error occurred.
+      running {!session_player_play} directly, or using
+      {!session_player_seek} first.  When this call returns, the track
+      will have been loaded, unless an error occurred.
 
       @param session Your session object
       @param track The track to be loaded
 
-      @raise {!ERROR_MISSING_CALLBACK}
-      @raise {!ERROR_RESOURCE_NOT_LOADED}
-      @raise {!ERROR_TRACK_NOT_PLAYABLE}
+      @raise Error {!ERROR_MISSING_CALLBACK}
+      @raise Error {!ERROR_RESOURCE_NOT_LOADED}
+      @raise Error {!ERROR_TRACK_NOT_PLAYABLE}
   *)
 
 val session_player_seek : session -> float -> unit
@@ -697,9 +697,9 @@ val session_player_prefetch : session -> track -> unit
       @param session Your session object
       @param track The track to be prefetched
 
-      @raise {!ERROR_NO_CACHE}
+      @raise Error {!ERROR_NO_CACHE}
 
-      @note Prefetching is only possible if a cache is configured. *)
+      Note: Prefetching is only possible if a cache is configured. *)
 
 val session_playlistcontainer : session -> playlistcontainer
   (** Returns the playlist container for the currently logged in user.
@@ -765,9 +765,9 @@ val session_num_friends : session -> int
       @param session Session object
 
       @return Number of users in friends. Each user can be extracted
-      using the {!friend} method. The number of users in the list will
-      not be updated nor change order between calls to
-      {!process_events}.  *)
+      using the {!session_friend} method. The number of users in the
+      list will not be updated nor change order between calls to
+      {!session_process_events}.  *)
 
 val session_friend : session -> int -> user
   (** Retrun the given user from the currently logged in users list of
@@ -784,7 +784,7 @@ val session_set_connection_type : session -> connection_type -> unit
       @param session Session object
       @param type Connection type
 
-      @note Used in conjunction with {!session_set_connection_rules}
+      Note: Used in conjunction with {!session_set_connection_rules}
       to control how libspotify should behave in respect to network
       activity and offline synchronization. *)
 
@@ -795,7 +795,7 @@ val session_set_connection_rules : session -> connection_rules list -> unit
       @param session Session object
       @param rules Connection rules
 
-      @note Used in conjunction with {!session_set_connection_type} to
+      Note: Used in conjunction with {!session_set_connection_type} to
       control how libspotify should behave in respect to network
       activity and offline synchronization. *)
 
@@ -931,7 +931,7 @@ val link_create_from_artistbrowse_portrait : artistbrowse -> int -> link
 
       @return A link object representing an image
 
-      @note The difference from {!link_create_from_artist_portrait} is
+      Note: The difference from {!link_create_from_artist_portrait} is
       that the artist browse object may contain multiple portraits.
   *)
 
@@ -950,7 +950,7 @@ val link_create_from_playlist : playlist -> link
 
       @return A link representing the playlist
 
-      @note Due to reasons in the playlist backend design and the
+      Note: Due to reasons in the playlist backend design and the
       Spotify URI scheme you need to wait for the playlist to be
       loaded before you can successfully construct an URI. If
       {!link_create_from_playlist} returns a NULL pointer, try again
@@ -1046,7 +1046,7 @@ val track_is_loaded : track -> bool
 
       @return [true] if track is loaded
 
-      @note This is equivalent to checking if {!error} not returns
+      Note: This is equivalent to checking if {!error} not returns
       {!ERROR_IS_LOADING}.
   *)
 
@@ -1069,9 +1069,9 @@ val track_is_available : session -> track -> bool
 
       @return [true] if track is available for playback, otherwise [false].
 
-      @note The track must be loaded or this function will always
+      Note: The track must be loaded or this function will always
       return false.
-      @see {!track_is_loaded}
+      See {!track_is_loaded}
   *)
 
 val track_is_local : session -> track -> bool
@@ -1082,9 +1082,9 @@ val track_is_local : session -> track -> bool
 
       @return [true] if track is a local file.
 
-      @note The track must be loaded or this function will always
+      Note: The track must be loaded or this function will always
       return false.
-      @see {!sp_track_is_loaded}
+      See {!track_is_loaded}
   *)
 
 val track_is_autolinked : session -> track -> bool
@@ -1095,10 +1095,10 @@ val track_is_autolinked : session -> track -> bool
 
       @return [true] if track is autolinked.
 
-      @note The track must be loaded or this function will always
+      Note: The track must be loaded or this function will always
       return false.
 
-      @see {!track_is_loaded}
+      See {!track_is_loaded}
   *)
 
 val track_is_starred : session -> track -> bool
@@ -1109,9 +1109,9 @@ val track_is_starred : session -> track -> bool
 
       @return [true] if track is starred.
 
-      @note The track must be loaded or this function will always
+      Note: The track must be loaded or this function will always
       return false.
-      @see {!track_is_loaded}
+      See {!track_is_loaded}
   *)
 
 val track_set_starred : session -> track list -> bool -> unit
@@ -1121,8 +1121,8 @@ val track_set_starred : session -> track list -> bool -> unit
       @param tracks List of tracks.
       @param star Starred status of the tracks
 
-      @note This will fail silently if playlists are disabled.
-      @see {!set_playlists_enabled}
+      Note: This will fail silently if playlists are disabled.
+      See {!set_playlists_enabled}
   *)
 
 val track_num_artists : track -> int
@@ -1244,9 +1244,9 @@ val album_is_available : album -> bool
 
       @return [true] if album is available for playback, otherwise [false].
 
-      @note The album must be loaded or this function will always
+      Note: The album must be loaded or this function will always
       return [false].
-      @see {!album_is_loaded}
+      See {!album_is_loaded}
   *)
 
 val album_artist : album -> artist
@@ -1265,7 +1265,7 @@ val album_cover : album -> string
       If the album has no image or the metadata for the album is not
       loaded yet, this function returns the empty string.
 
-      @see {!image_create}
+      See {!image_create}
   *)
 
 val album_name : album -> string
