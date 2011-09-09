@@ -841,6 +841,202 @@ val session_user_country : session -> int
       @return Country encoded in an integer ['SE' = (Char.code 'S' lsl
       8) lor Char.code 'E']. *)
 
+(** Links (Spotify URIs) *)
+
+(** These functions handle links to Spotify entities in a way that
+    allows you to not care about the textual representation of the
+    link. *)
+
+type link_type =
+  | LINKTYPE_INVALID
+      (** Link type not valid - default until the library has parsed
+          the link, or when parsing failed. *)
+  | LINKTYPE_TRACK
+      (** Link type is track. *)
+  | LINKTYPE_ALBUM
+      (** Link type is album. *)
+  | LINKTYPE_ARTIST
+      (** Link type is artist. *)
+  | LINKTYPE_SEARCH
+      (** Link type is search. *)
+  | LINKTYPE_PLAYLIST
+      (** Link type is playlist. *)
+  | LINKTYPE_PROFILE
+      (** Link type is profile. *)
+  | LINKTYPE_STARRED
+      (** Link type is starred. *)
+  | LINKTYPE_LOCALTRACK
+      (** Link type is a local file. *)
+  | LINKTYPE_IMAGE
+      (** Link type is an image. *)
+
+val link_create_from_string : string -> link
+  (** Create a Spotify link given a string.
+
+      @param link A string representation of a Spotify link
+
+      @return A link representation of the given string
+      representation. If the link could not be parsed, this function
+      returns a NULL pointer.
+  *)
+
+val link_create_from_track : track -> float -> link
+  (** Generates a link object from a track.
+
+      @param track A track object
+      @param offset Offset in track in ms.
+
+      @return A link representing the track
+  *)
+
+val link_create_from_album : album -> link
+  (** Create a link object from an album.
+
+      @param album An album object
+
+      @return A link representing the album
+  *)
+
+val link_create_from_album_cover : album -> link
+  (** Create an image link object from an album.
+
+      @param album An album object
+
+      @return A link representing the album cover. Type is set to
+      {!LINKTYPE_IMAGE}.
+  *)
+
+val link_create_from_artist : artist -> link
+  (** Creates a link object from an artist.
+
+      @param artist An artist object
+
+      @return A link object representing the artist
+  *)
+
+val link_create_from_artist_portrait : artist -> link
+  (** Creates a link object pointing to an artist portrait.
+
+      @param artist Artist browse object
+
+      @return A link object representing an image
+  *)
+
+val link_create_from_artistbrowse_portrait : artistbrowse -> int -> link
+  (** Creates a link object from an artist portrait.
+
+      @param arb Artist browse object
+      @param index The index of the portrait. Should be in the
+      interval [0 .. artistbrowse_num_portraits () - 1]
+
+      @return A link object representing an image
+
+      @note The difference from {!link_create_from_artist_portrait} is
+      that the artist browse object may contain multiple portraits.
+  *)
+
+val link_create_from_search : search -> link
+  (** Generate a link object representing the current search.
+
+      @param search Search object
+
+      @return A link representing the search
+  *)
+
+val link_create_from_playlist : playlist -> link
+  (** Create a link object representing the given playlist.
+
+      @param playlist Playlist object
+
+      @return A link representing the playlist
+
+      @note Due to reasons in the playlist backend design and the
+      Spotify URI scheme you need to wait for the playlist to be
+      loaded before you can successfully construct an URI. If
+      {!link_create_from_playlist} returns a NULL pointer, try again
+      after the {!playlist_state_changed} callback has fired.
+  *)
+
+val link_create_from_user : user -> link
+  (** Create a link object representing the given playlist.
+
+      @param user User object
+
+      @return A link representing the profile.
+  *)
+
+val link_create_from_image : image -> link
+  (** Create a link object representing the given image.
+
+      @param image Image object
+
+      @return A link representing the image.
+  *)
+
+val link_as_string : link -> string
+  (** Create a string representation of the given Spotify link.
+
+      @param link The Spotify link whose string representation you are
+      interested in
+
+      @return The string representation of the link
+  *)
+
+val link_type : link -> link_type
+  (** The link type of the specified link.
+
+      @param link The Spotify link whose type you are interested in
+
+      @return The link type of the specified link - see the
+      sp_linktype enum for possible values
+  *)
+
+val link_as_track : link -> track
+  (** The track representation for the given link.
+
+      @param link The Spotify link whose track you are interested in
+
+      @return The track representation of the given track link. If the
+      link is not of track type then NULL is returned. *)
+
+val link_as_track_and_offset : link -> track * float
+  (** The track and offset into track representation for the given link.
+
+      @param link The Spotify link whose track you are interested in
+
+      @return The track and offset representation of the given track
+      link. If the link is not of track type then NULL is
+      returned. *)
+
+val link_as_album : link -> album
+  (** The album representation for the given link.
+
+      @param link The Spotify link whose album you are interested in
+
+      @return The album representation of the given album link. If the
+      link is not of album type then NULL is returned.
+  *)
+
+val link_as_artist : link -> artist
+  (** The artist representation for the given link.
+
+      @param link The Spotify link whose artist you are interested in
+
+      @return The artist representation of the given link If the link
+      is not of artist type then NULL is returned. *)
+
+val link_as_user : link -> user
+  (** The user representation for the given link.
+
+      @param link The Spotify link whose user you are interested in
+
+      @return The user representation of the given link If the link is
+      not of user type then NULL is returned. *)
+
+val link_release : link -> unit
+  (** Destroy the reference to the link. Any subsequent operation on
+      the link will raise {!NULL}. *)
+
 (** {6 Track subsystem} *)
 
 val track_is_loaded : track -> bool

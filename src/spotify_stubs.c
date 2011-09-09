@@ -102,6 +102,48 @@ DEFINE_OPS(playlist, "spotify:playlist")
 DEFINE_OPS(playlistcontainer, "spotify:playlistcontainer")
 DEFINE_OPS(inbox, "spotify:inbox")
 
+struct search {
+  sp_search *sp_search;
+  value callback;
+  value search;
+};
+
+#define Search_val(v) *(struct search **)Data_custom_val(v)
+
+static void search_finalize(value x)
+{
+  struct search *search = Search_val(x);
+  if (search) {
+    caml_remove_generational_global_root(&(search->callback));
+    caml_remove_generational_global_root(&(search->search));
+    sp_search_release(search->sp_search);
+    free(search);
+  }
+}
+
+static struct custom_operations search_ops = {
+  "spotify:search",
+  search_finalize,
+  spotify_compare,
+  spotify_hash,
+  custom_serialize_default,
+  custom_deserialize_default
+};
+
+static value alloc_search(struct search *search)
+{
+  value x = caml_alloc_custom(&search_ops, sizeof(struct search *), 0, 1);
+  Search_val(x) = search;
+  return x;
+}
+
+static struct search *get_search(value x)
+{
+  struct search *search = Search_val(x);
+  if (search == NULL) caml_raise(*caml_named_value("spotify:null"));
+  return search;
+}
+
 /* +-----------------------------------------------------------------+
    | Error handling                                                  |
    +-----------------------------------------------------------------+ */
@@ -647,6 +689,127 @@ CAMLprim value ocaml_spotify_session_user_country(value session)
 }
 
 /* +-----------------------------------------------------------------+
+   | Links                                                           |
+   +-----------------------------------------------------------------+ */
+
+CAMLprim value ocaml_spotify_link_create_from_string(value string)
+{
+  return alloc_link(sp_link_create_from_string(String_val(string)));
+}
+
+CAMLprim value ocaml_spotify_link_create_from_track(value track, value offset)
+{
+  return alloc_link(sp_link_create_from_track(get_track(track), (int)(Double_val(offset) * 1000)));
+}
+
+CAMLprim value ocaml_spotify_link_create_from_album(value album)
+{
+  return alloc_link(sp_link_create_from_album(get_album(album)));
+}
+
+CAMLprim value ocaml_spotify_link_create_from_album_cover(value album)
+{
+  return alloc_link(sp_link_create_from_album_cover(get_album(album)));
+}
+
+CAMLprim value ocaml_spotify_link_create_from_artist(value artist)
+{
+  return alloc_link(sp_link_create_from_artist(get_artist(artist)));
+}
+
+CAMLprim value ocaml_spotify_link_create_from_artist_portrait(value artist)
+{
+  return alloc_link(sp_link_create_from_artist_portrait(get_artist(artist)));
+}
+
+CAMLprim value ocaml_spotify_link_create_from_artistbrowse_portrait(value artist, value index)
+{
+  return alloc_link(sp_link_create_from_artistbrowse_portrait(get_artistbrowse(artist), Int_val(index)));
+}
+
+CAMLprim value ocaml_spotify_link_create_from_search(value search)
+{
+  return alloc_link(sp_link_create_from_search(get_search(search)->sp_search));
+}
+
+CAMLprim value ocaml_spotify_link_create_from_playlist(value playlist)
+{
+  return alloc_link(sp_link_create_from_playlist(get_playlist(playlist)));
+}
+
+CAMLprim value ocaml_spotify_link_create_from_user(value user)
+{
+  return alloc_link(sp_link_create_from_user(get_user(user)));
+}
+
+CAMLprim value ocaml_spotify_link_create_from_image(value image)
+{
+  return alloc_link(sp_link_create_from_image(get_image(image)));
+}
+
+CAMLprim value ocaml_spotify_link_as_string(value link)
+{
+  sp_link *sp_link = get_link(link);
+  int len = sp_link_as_string(sp_link, NULL, 0);
+  char string[len + 1];
+  sp_link_as_string(sp_link, string, len + 1);
+  return caml_copy_string(string);
+}
+
+CAMLprim value ocaml_spotify_link_type(value link)
+{
+  return Val_int(sp_link_type(get_link(link)));
+}
+
+CAMLprim value ocaml_spotify_link_as_track(value link)
+{
+  sp_track *track = sp_link_as_track(get_link(link));
+  if (track) sp_track_add_ref(track);
+  return alloc_track(track);
+}
+
+CAMLprim value ocaml_spotify_link_as_track_and_offset(value link)
+{
+  CAMLparam1(link);
+  CAMLlocal1(result);
+  int offset = 0;
+  sp_track *track = sp_link_as_track_and_offset(get_link(link), &offset);
+  if (track) sp_track_add_ref(track);
+  result = caml_alloc_tuple(2);
+  Store_field(result, 0, alloc_track(track));
+  Store_field(result, 1, caml_copy_double((double)offset / 1000));
+  CAMLreturn(result);
+}
+
+CAMLprim value ocaml_spotify_link_as_album(value link)
+{
+  sp_album *album = sp_link_as_album(get_link(link));
+  if (album) sp_album_add_ref(album);
+  return alloc_album(album);
+}
+
+CAMLprim value ocaml_spotify_link_as_artist(value link)
+{
+  sp_artist *artist = sp_link_as_artist(get_link(link));
+  if (artist) sp_artist_add_ref(artist);
+  return alloc_artist(artist);
+}
+
+CAMLprim value ocaml_spotify_link_as_user(value link)
+{
+  sp_user *user = sp_link_as_user(get_link(link));
+  if (user) sp_user_add_ref(user);
+  return alloc_user(user);
+}
+
+CAMLprim value ocaml_spotify_link_release(value link)
+{
+  link_finalize(link);
+  Link_val(link) = NULL;
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
    | Track subsystem                                                 |
    +-----------------------------------------------------------------+ */
 
@@ -760,48 +923,6 @@ CAMLprim value ocaml_spotify_track_release(value track)
 /* +-----------------------------------------------------------------+
    | Search subsystem                                                |
    +-----------------------------------------------------------------+ */
-
-struct search {
-  sp_search *sp_search;
-  value callback;
-  value search;
-};
-
-#define Search_val(v) *(struct search **)Data_custom_val(v)
-
-static void search_finalize(value x)
-{
-  struct search *search = Search_val(x);
-  if (search) {
-    caml_remove_generational_global_root(&(search->callback));
-    caml_remove_generational_global_root(&(search->search));
-    sp_search_release(search->sp_search);
-    free(search);
-  }
-}
-
-static struct custom_operations search_ops = {
-  "spotify:search",
-  search_finalize,
-  spotify_compare,
-  spotify_hash,
-  custom_serialize_default,
-  custom_deserialize_default
-};
-
-static value alloc_search(struct search *search)
-{
-  value x = caml_alloc_custom(&search_ops, sizeof(struct search *), 0, 1);
-  Search_val(x) = search;
-  return x;
-}
-
-static struct search *get_search(value x)
-{
-  struct search *search = Search_val(x);
-  if (search == NULL) caml_raise(*caml_named_value("spotify:null"));
-  return search;
-}
 
 static void search_complete(sp_search *result, void *userdata)
 {

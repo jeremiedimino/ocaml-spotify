@@ -261,6 +261,42 @@ external offline_time_left : session -> int = "ocaml_spotify_offline_time_left"
 external session_user_country : session -> int = "ocaml_spotify_session_user_country"
 
 (* +-----------------------------------------------------------------+
+   | Links                                                           |
+   +-----------------------------------------------------------------+ *)
+
+type link_type =
+  | LINKTYPE_INVALID
+  | LINKTYPE_TRACK
+  | LINKTYPE_ALBUM
+  | LINKTYPE_ARTIST
+  | LINKTYPE_SEARCH
+  | LINKTYPE_PLAYLIST
+  | LINKTYPE_PROFILE
+  | LINKTYPE_STARRED
+  | LINKTYPE_LOCALTRACK
+  | LINKTYPE_IMAGE
+
+external link_create_from_string : string -> link = "ocaml_spotify_link_create_from_string"
+external link_create_from_track : track -> float -> link = "ocaml_spotify_link_create_from_track"
+external link_create_from_album : album -> link = "ocaml_spotify_link_create_from_album"
+external link_create_from_album_cover : album -> link = "ocaml_spotify_link_create_from_album_cover"
+external link_create_from_artist : artist -> link = "ocaml_spotify_link_create_from_artist"
+external link_create_from_artist_portrait : artist -> link = "ocaml_spotify_link_create_from_artist_portrait"
+external link_create_from_artistbrowse_portrait : artistbrowse -> int -> link = "ocaml_spotify_link_create_from_artistbrowse_portrait"
+external link_create_from_search : search -> link = "ocaml_spotify_link_create_from_search"
+external link_create_from_playlist : playlist -> link = "ocaml_spotify_link_create_from_playlist"
+external link_create_from_user : user -> link = "ocaml_spotify_link_create_from_user"
+external link_create_from_image : image -> link = "ocaml_spotify_link_create_from_image"
+external link_as_string : link -> string = "ocaml_spotify_link_as_string"
+external link_type : link -> link_type = "ocaml_spotify_link_type"
+external link_as_track : link -> track = "ocaml_spotify_link_as_track"
+external link_as_track_and_offset : link -> track * float = "ocaml_spotify_link_as_track_and_offset"
+external link_as_album : link -> album = "ocaml_spotify_link_as_album"
+external link_as_artist : link -> artist = "ocaml_spotify_link_as_artist"
+external link_as_user : link -> user = "ocaml_spotify_link_as_user"
+external link_release : link -> unit = "ocaml_spotify_link_release"
+
+(* +-----------------------------------------------------------------+
    | Track subsystem                                                 |
    +-----------------------------------------------------------------+ *)
 
