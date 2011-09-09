@@ -168,6 +168,8 @@ type audio_buffer_stats = {
 
 type bytes = (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
 
+external string_of_bytes : bytes -> string = "ocaml_spotify_string_of_bytes"
+
 type connection_type =
   | CONNECTION_TYPE_UNKNOWN
   | CONNECTION_TYPE_NONE

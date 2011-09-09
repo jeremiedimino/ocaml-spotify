@@ -32,6 +32,14 @@
 #  define DEBUG(fmt, ...)
 #endif
 
+CAMLprim value ocaml_spotify_string_of_bytes(value bytes)
+{
+  intnat len = Caml_ba_array_val(bytes)->dim[0];
+  value str = caml_alloc_string(len);
+  memcpy(String_val(str), Caml_ba_data_val(bytes), len);
+  return str;
+}
+
 /* +-----------------------------------------------------------------+
    | Custom values                                                   |
    +-----------------------------------------------------------------+ */

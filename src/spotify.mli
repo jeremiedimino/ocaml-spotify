@@ -251,6 +251,10 @@ type audio_buffer_stats = {
 type bytes = (char, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t
     (** Type of array of bytes. *)
 
+val string_of_bytes : bytes -> string
+  (** Copy the given array of bytes into a string. This is usefull for
+      library that does not support bigarrays. *)
+
 (** Current connection type set using {!set_connection_type}. *)
 type connection_type =
   | CONNECTION_TYPE_UNKNOWN
