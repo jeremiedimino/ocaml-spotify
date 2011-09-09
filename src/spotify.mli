@@ -1217,6 +1217,85 @@ val track_release : track -> unit
   (** Destroy the reference to the track. Any subsequent operation on
       the track will raise {!NULL}. *)
 
+(** {6 Album subsystem} *)
+
+(** Album types. *)
+type album_type =
+  | ALBUMTYPE_ALBUM
+      (** Normal album. *)
+  | ALBUMTYPE_SINGLE
+      (** Single. *)
+  | ALBUMTYPE_COMPILATION
+      (** Compilation. *)
+  | ALBUMTYPE_UNKNOWN
+      (** Unknown type. *)
+
+val album_is_loaded : album -> bool
+  (** Check if the album object is populated with data.
+
+      @param album Album object
+      @return [true] if metadata is present, [false] if not.
+  *)
+
+val album_is_available : album -> bool
+  (** Return [true] if the album is available in the current region.
+
+      @param album The album
+
+      @return [true] if album is available for playback, otherwise [false].
+
+      @note The album must be loaded or this function will always
+      return [false].
+      @see {!album_is_loaded}
+  *)
+
+val album_artist : album -> artist
+  (** Get the artist associated with the given album.
+
+      @param album Album object
+      @return A reference to the artist. NULL if the metadata has not
+      been loaded yet. *)
+
+val album_cover : album -> string
+  (** Return image ID representing the album's coverart.
+
+      @param album Album object
+
+      @return ID byte sequence that can be passed to {!image_create}
+      If the album has no image or the metadata for the album is not
+      loaded yet, this function returns the empty string.
+
+      @see {!image_create}
+  *)
+
+val album_name : album -> string
+  (** Return name of album.
+
+      @param album Album object
+
+      @return Name of album.
+  *)
+
+val album_year : album -> int
+  (** Return release year of specified album
+
+      @param album Album object
+
+      @return Release year
+  *)
+
+val album_type : album -> album_type
+  (** Return type of specified album.
+
+      @param album Album object
+
+      @return The type of the album.
+  *)
+
+val album_release : album -> unit
+  (** Destroy the reference to the album. Any subsequent operation on
+      the album will raise {!NULL}. *)
+
 (** {6 Search subsystem} *)
 
 (** List of genres for radio query. *)

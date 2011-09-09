@@ -921,6 +921,58 @@ CAMLprim value ocaml_spotify_track_release(value track)
 }
 
 /* +-----------------------------------------------------------------+
+   | Album subsystem                                                 |
+   +-----------------------------------------------------------------+ */
+
+CAMLprim value ocaml_spotify_album_is_loaded(value album)
+{
+  return Val_bool(sp_album_is_loaded(get_album(album)));
+}
+
+CAMLprim value ocaml_spotify_album_is_available(value album)
+{
+  return Val_bool(sp_album_is_available(get_album(album)));
+}
+
+CAMLprim value ocaml_spotify_album_artist(value album)
+{
+  sp_artist *artist = sp_album_artist(get_album(album));
+  if (artist) sp_artist_add_ref(artist);
+  return alloc_artist(artist);
+}
+
+CAMLprim value ocaml_spotify_album_cover(value album)
+{
+  const byte *id = sp_album_cover(get_album(album));
+  value str = caml_alloc_string(20);
+  memcpy(String_val(str), id, 20);
+  return str;
+}
+
+CAMLprim value ocaml_spotify_album_name(value album)
+{
+  return caml_copy_string(sp_album_name(get_album(album)));
+}
+
+
+CAMLprim value ocaml_spotify_album_year(value album)
+{
+  return Val_int(sp_album_year(get_album(album)));
+}
+
+CAMLprim value ocaml_spotify_album_type(value album)
+{
+  return Val_int(sp_album_type(get_album(album)));
+}
+
+CAMLprim value ocaml_spotify_album_release(value album)
+{
+  album_finalize(album);
+  Album_val(album) = NULL;
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
    | Search subsystem                                                |
    +-----------------------------------------------------------------+ */
 

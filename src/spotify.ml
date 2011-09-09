@@ -319,6 +319,25 @@ external localtrack_create : artist : string -> title : string -> album : string
 external track_release : track -> unit = "ocaml_spotify_track_release"
 
 (* +-----------------------------------------------------------------+
+   | Album subsystem                                                 |
+   +-----------------------------------------------------------------+ *)
+
+type album_type =
+  | ALBUMTYPE_ALBUM
+  | ALBUMTYPE_SINGLE
+  | ALBUMTYPE_COMPILATION
+  | ALBUMTYPE_UNKNOWN
+
+external album_is_loaded : album -> bool = "ocaml_spotify_album_is_loaded"
+external album_is_available : album -> bool = "ocaml_spotify_album_is_available"
+external album_artist : album -> artist = "ocaml_spotify_album_artist"
+external album_cover : album -> string = "ocaml_spotify_album_cover"
+external album_name : album -> string = "ocaml_spotify_album_name"
+external album_year : album -> int = "ocaml_spotify_album_year"
+external album_type : album -> album_type = "ocaml_spotify_album_type"
+external album_release : album -> unit = "ocaml_spotify_album_release"
+
+(* +-----------------------------------------------------------------+
    | Search subsystem                                                |
    +-----------------------------------------------------------------+ *)
 
