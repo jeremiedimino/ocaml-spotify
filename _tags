@@ -1,0 +1,6 @@
+# -*- conf -*-
+
+<src/*>: use_libspotify
+
+# OASIS_START
+# OASIS_STOP

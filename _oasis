@@ -1,0 +1,66 @@
+# +-------------------------------------------------------------------+
+# | Package parameters                                                |
+# +-------------------------------------------------------------------+
+
+OASISFormat: 0.1
+Name: ocaml-spotify
+Version: 1.0
+LicenseFile: LICENSE
+License: BSD3
+Authors: Jérémie Dimino
+Homepage: http://ocaml-spotify.forge.ocamlcore.org/
+BuildTools:ocamlbuild
+Plugins: DevFiles (0.2), META (0.2)
+Synopsis: Bindings for libspotify
+Description:
+  ocaml-spotify offers bindings for the Spotify client library.
+
+# +-------------------------------------------------------------------+
+# | The library                                                       |
+# +-------------------------------------------------------------------+
+
+Library "ocaml-spotify"
+  Path: src
+  Install: true
+  Modules: Spotify
+  CSources: spotify_stubs.c
+  CCLib: -lpthread
+  BuildDepends: bigarray, threads
+  FindlibName: spotify
+  XMETADescription: Bindings for libspotify
+
+# +-------------------------------------------------------------------+
+# | Examples                                                          |
+# +-------------------------------------------------------------------+
+
+Executable play
+  Path: examples
+  Install: false
+  Build: true
+  MainIs: play.ml
+  BuildDepends: spotify, unix
+  CompiledObject: best
+
+# +-------------------------------------------------------------------+
+# | Doc                                                               |
+# +-------------------------------------------------------------------+
+
+Document "spotify-api"
+  Title: API reference for ocaml-spotify
+  Type: ocamlbuild (0.2)
+  Install: true
+  InstallDir: $htmldir/api
+  DataFiles: style.css
+  BuildTools: ocamldoc
+  XOCamlbuildPath: ./
+  XOCamlbuildLibraries: spotify
+
+# +-------------------------------------------------------------------+
+# | Misc                                                              |
+# +-------------------------------------------------------------------+
+
+SourceRepository head
+  Type: darcs
+  Location: http://darcs.ocamlcore.org/repos/ocaml-spotify
+  Browser: http://darcs.ocamlcore.org/cgi-bin/darcsweb.cgi?r=ocaml-spotify;a=summary
+
