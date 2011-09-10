@@ -1318,6 +1318,113 @@ val artist_release : album -> unit
   (** Destroy the reference to the artist. Any subsequent operation on
       the artist will raise {!NULL}. *)
 
+(** {6 Album browsing} *)
+
+(** Browsing adds additional information to what an {!album} holds. It
+    retrieves copyrights, reviews and tracks of the album. *)
+
+val albumbrowse_create : session -> album -> (albumbrowse -> unit) -> albumbrowse
+  (** Initiate a request for browsing an album.
+
+      @param session Session object
+      @param album Album to be browsed. The album metadata does not
+      have to be loaded
+      @param callback Callback to be invoked when browsing has been
+      completed.
+
+      @return Album browse object
+  *)
+
+val albumbrowse_is_loaded : albumbrowse -> bool
+  (** Check if an album browse request is completed.
+
+      @param alb Album browse object
+
+      @return [true] if browsing is completed, [false] if not.
+  *)
+
+val albumbrowse_error : albumbrowse -> error
+  (** Check if browsing returned an error code.
+
+      @param alb Album browse object
+
+      @return One of the following errors:
+      - {!ERROR_OK}
+      - {!ERROR_IS}_LOADING
+      - {!ERROR_OTHER}_PERMANENT
+      - {!ERROR_OTHER}_TRANSIENT
+  *)
+
+val albumbrowse_album : albumbrowse -> album
+  (** Given an album browse object, return the pointer to its album object.
+
+      @param alb Album browse object
+
+      @return Album object
+  *)
+
+val albumbrowse_artist : albumbrowse -> artist
+  (** Given an album browse object, return the pointer to its artist
+      object.
+
+      @param alb Album browse object
+
+      @return Artist object
+  *)
+
+val albumbrowee_num_copyrights : albumbrowse -> int
+  (** Given an album browse object, return number of copyright
+      strings.
+
+      @param alb Album browse object
+
+      @return Number of copyright strings available, 0 if unknown.
+  *)
+
+val albumbrowse_copyright : albumbrowse -> int -> string
+  (** Given an album browse object, return one of its copyright
+      strings.
+
+      @param alb Album browse object
+      @param index The index for the copyright string. Should be in
+      the interval [0 .. sp_albumbrowse_num_copyrights () - 1]
+
+      @return Copyright string in UTF-8 format.
+
+      @raise Invalid_argument if the index is invalid.
+  *)
+
+val albumbrowse_num_tracks : albumbrowse -> int
+  (** Given an album browse object, return number of tracks.
+
+      @param alb Album browse object
+
+      @return Number of tracks on album
+  *)
+
+val albumbrowse_track : albumbrowse -> int -> track
+  (** Given an album browse object, return a pointer to one of its
+      tracks.
+
+      @param alb Album browse object
+      @param index The index for the track. Should be in the interval
+      [0 .. sp_albumbrowse_num_tracks () - 1]
+
+      @return A track.
+  *)
+
+val albumbrowse_review : albumbrowse -> string
+  (** Given an album browse object, return its review.
+
+      @param alb Album browse object
+
+      @return Review string in UTF-8 format.
+  *)
+
+val albumbrowse_release : album -> unit
+  (** Destroy the reference to the albumbrowse. Any subsequent
+      operation on the albumbrowse will raise {!NULL}. *)
+
 (** {6 Search subsystem} *)
 
 (** List of genres for radio query. *)

@@ -346,6 +346,22 @@ external artist_is_loaded : artist -> bool = "ocaml_spotify_artist_is_loaded"
 external artist_release : album -> unit = "ocaml_spotify_artist_release"
 
 (* +-----------------------------------------------------------------+
+   | Album browsing                                                  |
+   +-----------------------------------------------------------------+ *)
+
+external albumbrowse_create : session -> album -> (albumbrowse -> unit) -> albumbrowse = "ocaml_spotify_albumbrowse_create"
+external albumbrowse_is_loaded : albumbrowse -> bool = "ocaml_spotify_albumbrowse_is_loaded"
+external albumbrowse_error : albumbrowse -> error = "ocaml_spotify_albumbrowse_error"
+external albumbrowse_album : albumbrowse -> album = "ocaml_spotify_albumbrowse_album"
+external albumbrowse_artist : albumbrowse -> artist = "ocaml_spotify_albumbrowse_artist"
+external albumbrowee_num_copyrights : albumbrowse -> int = "ocaml_spotify_albumbrowse_num_copyrights"
+external albumbrowse_copyright : albumbrowse -> int -> string = "ocaml_spotify_albumbrowse_copyright"
+external albumbrowse_num_tracks : albumbrowse -> int = "ocaml_spotify_albumbrowse_num_tracks"
+external albumbrowse_track : albumbrowse -> int -> track = "ocaml_spotify_albumbrowse_track"
+external albumbrowse_review : albumbrowse -> string = "ocaml_spotify_albumbrowse_review"
+external albumbrowse_release : album -> unit = "ocaml_spotify_albumbrowse_release"
+
+(* +-----------------------------------------------------------------+
    | Search subsystem                                                |
    +-----------------------------------------------------------------+ *)
 
