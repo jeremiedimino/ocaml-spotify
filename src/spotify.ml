@@ -338,6 +338,14 @@ external album_type : album -> album_type = "ocaml_spotify_album_type"
 external album_release : album -> unit = "ocaml_spotify_album_release"
 
 (* +-----------------------------------------------------------------+
+   | Artist subsystem                                                |
+   +-----------------------------------------------------------------+ *)
+
+external artist_name : artist -> string = "ocaml_spotify_artist_name"
+external artist_is_loaded : artist -> bool = "ocaml_spotify_artist_is_loaded"
+external artist_release : album -> unit = "ocaml_spotify_artist_release"
+
+(* +-----------------------------------------------------------------+
    | Search subsystem                                                |
    +-----------------------------------------------------------------+ *)
 

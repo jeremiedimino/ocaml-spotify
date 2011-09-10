@@ -973,6 +973,27 @@ CAMLprim value ocaml_spotify_album_release(value album)
 }
 
 /* +-----------------------------------------------------------------+
+   | Aritst subsystem                                                |
+   +-----------------------------------------------------------------+ */
+
+CAMLprim value ocaml_spotify_artist_name(value artist)
+{
+  return caml_copy_string(sp_artist_name(get_artist(artist)));
+}
+
+CAMLprim value ocaml_spotify_artist_is_loaded(value artist)
+{
+  return Val_bool(sp_artist_is_loaded(get_artist(artist)));
+}
+
+CAMLprim value ocaml_spotify_artist_release(value artist)
+{
+  artist_finalize(artist);
+  Artist_val(artist) = NULL;
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
    | Search subsystem                                                |
    +-----------------------------------------------------------------+ */
 

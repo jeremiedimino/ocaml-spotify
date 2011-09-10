@@ -1296,6 +1296,28 @@ val album_release : album -> unit
   (** Destroy the reference to the album. Any subsequent operation on
       the album will raise {!NULL}. *)
 
+(** {6 Artist subsystem} *)
+
+val artist_name : artist -> string
+  (** Return name of artist.
+
+      @param artist Artist object
+
+      @return Name of artist.
+  *)
+
+val artist_is_loaded : artist -> bool
+  (** Check if the artist object is populated with data.
+
+      @param artist An artist object
+
+      @return [true] if metadata is present, [false] if not.
+  *)
+
+val artist_release : album -> unit
+  (** Destroy the reference to the artist. Any subsequent operation on
+      the artist will raise {!NULL}. *)
+
 (** {6 Search subsystem} *)
 
 (** List of genres for radio query. *)
