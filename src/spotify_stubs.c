@@ -100,7 +100,6 @@ static long spotify_hash(value x)
 #define Track_val(v) *(sp_track **)Data_custom_val(v)
 #define Album_val(v) *(sp_album **)Data_custom_val(v)
 #define Artist_val(v) *(sp_artist **)Data_custom_val(v)
-#define Artistbrowse_val(v) *(sp_artistbrowse **)Data_custom_val(v)
 #define Toplistbrowse_val(v) *(sp_toplistbrowse **)Data_custom_val(v)
 #define Link_val(v) *(sp_link **)Data_custom_val(v)
 #define Image_val(v) *(sp_image **)Data_custom_val(v)
@@ -112,7 +111,6 @@ static long spotify_hash(value x)
 DEFINE_OPS(track, "spotify:track")
 DEFINE_OPS(album, "spotify:album")
 DEFINE_OPS(artist, "spotify:artist")
-DEFINE_OPS(artistbrowse, "spotify:artistbrowse")
 DEFINE_OPS(toplistbrowse, "spotify:toplistbrowse")
 DEFINE_OPS(link, "spotify:link")
 DEFINE_OPS(image, "spotify:image")
@@ -171,9 +169,11 @@ static sp_session *get_session(value x)
 
 #define Search_val(v) *(struct search **)Data_custom_val(v)
 #define Albumbrowse_val(v) *(struct albumbrowse **)Data_custom_val(v)
+#define Artistbrowse_val(v) *(struct artistbrowse **)Data_custom_val(v)
 
 DEFINE_OPS_WITH_CALLBACK(search, "spotify:search")
 DEFINE_OPS_WITH_CALLBACK(albumbrowse, "spotify:albumbrowse")
+DEFINE_OPS_WITH_CALLBACK(artistbrowse, "spotify:artistbrowse")
 
 /* +-----------------------------------------------------------------+
    | Error handling                                                  |
@@ -727,9 +727,9 @@ CAMLprim value ocaml_spotify_link_create_from_artist_portrait(value artist)
   return alloc_link(sp_link_create_from_artist_portrait(get_artist(artist)));
 }
 
-CAMLprim value ocaml_spotify_link_create_from_artistbrowse_portrait(value artist, value index)
+CAMLprim value ocaml_spotify_link_create_from_artistbrowse_portrait(value artistbrowse, value index)
 {
-  return alloc_link(sp_link_create_from_artistbrowse_portrait(get_artistbrowse(artist), Int_val(index)));
+  return alloc_link(sp_link_create_from_artistbrowse_portrait(get_artistbrowse(artistbrowse)->sp_artistbrowse, Int_val(index)));
 }
 
 CAMLprim value ocaml_spotify_link_create_from_search(value search)
@@ -1084,6 +1084,111 @@ CAMLprim value ocaml_spotify_albumbrowse_release(value albumbrowse)
 {
   albumbrowse_finalize(albumbrowse);
   Albumbrowse_val(albumbrowse) = NULL;
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
+   | Artist browsing                                                 |
+   +-----------------------------------------------------------------+ */
+
+static void artistbrowse_complete(sp_artistbrowse *result, void *userdata)
+{
+  ENTER_CALLBACK;
+  struct artistbrowse *artistbrowse = (struct artistbrowse *)userdata;
+  caml_callback(artistbrowse->callback, artistbrowse->artistbrowse);
+  LEAVE_CALLBACK;
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_create(value session, value artist, value callback)
+{
+  struct artistbrowse *artistbrowse = new(struct artistbrowse);
+  sp_artistbrowse *sp_artistbrowse = sp_artistbrowse_create(get_session(session),
+                                                         Artist_val(artist),
+                                                         artistbrowse_complete,
+                                                         (void*)artistbrowse);
+  artistbrowse->sp_artistbrowse = sp_artistbrowse;
+  artistbrowse->callback = callback;
+  artistbrowse->artistbrowse = alloc_artistbrowse(artistbrowse);
+  caml_register_generational_global_root(&(artistbrowse->callback));
+  caml_register_generational_global_root(&(artistbrowse->artistbrowse));
+  return artistbrowse->artistbrowse;
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_is_loaded(value artistbrowse)
+{
+  return Val_bool(sp_artistbrowse_is_loaded(get_artistbrowse(artistbrowse)->sp_artistbrowse));
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_error(value artistbrowse)
+{
+  return Val_int(sp_artistbrowse_error(get_artistbrowse(artistbrowse)->sp_artistbrowse));
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_artist(value artistbrowse)
+{
+  sp_artist *artist = sp_artistbrowse_artist(get_artistbrowse(artistbrowse)->sp_artistbrowse);
+  if (artist) sp_artist_add_ref(artist);
+  return alloc_artist(artist);
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_num_portraits(value artistbrowse)
+{
+  return Val_int(sp_artistbrowse_num_portraits(get_artistbrowse(artistbrowse)->sp_artistbrowse));
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_portrait(value artistbrowse, value index)
+{
+  const byte *id = sp_artistbrowse_portrait(get_artistbrowse(artistbrowse)->sp_artistbrowse, Int_val(index));
+  value str = caml_alloc_string(20);
+  memcpy(String_val(str), id, 20);
+  return str;
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_num_tracks(value artistbrowse)
+{
+  return Val_int(sp_artistbrowse_num_tracks(get_artistbrowse(artistbrowse)->sp_artistbrowse));
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_track(value artistbrowse, value index)
+{
+  sp_track *track = sp_artistbrowse_track(get_artistbrowse(artistbrowse)->sp_artistbrowse, Int_val(index));
+  if (track) sp_track_add_ref(track);
+  return alloc_track(track);
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_num_albums(value artistbrowse)
+{
+  return Val_int(sp_artistbrowse_num_albums(get_artistbrowse(artistbrowse)->sp_artistbrowse));
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_album(value artistbrowse, value index)
+{
+  sp_album *album = sp_artistbrowse_album(get_artistbrowse(artistbrowse)->sp_artistbrowse, Int_val(index));
+  if (album) sp_album_add_ref(album);
+  return alloc_album(album);
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_num_similar_artists(value artistbrowse)
+{
+  return Val_int(sp_artistbrowse_num_similar_artists(get_artistbrowse(artistbrowse)->sp_artistbrowse));
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_similar_artist(value artistbrowse, value index)
+{
+  sp_artist *artist = sp_artistbrowse_similar_artist(get_artistbrowse(artistbrowse)->sp_artistbrowse, Int_val(index));
+  if (artist) sp_artist_add_ref(artist);
+  return alloc_artist(artist);
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_biography(value artistbrowse)
+{
+  return caml_copy_string(sp_artistbrowse_biography(get_artistbrowse(artistbrowse)->sp_artistbrowse));
+}
+
+CAMLprim value ocaml_spotify_artistbrowse_release(value artistbrowse)
+{
+  artistbrowse_finalize(artistbrowse);
+  Artistbrowse_val(artistbrowse) = NULL;
   return Val_unit;
 }
 

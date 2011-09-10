@@ -362,6 +362,25 @@ external albumbrowse_review : albumbrowse -> string = "ocaml_spotify_albumbrowse
 external albumbrowse_release : album -> unit = "ocaml_spotify_albumbrowse_release"
 
 (* +-----------------------------------------------------------------+
+   | Artist browsing                                                 |
+   +-----------------------------------------------------------------+ *)
+
+external artistbrowse_create : session -> artist -> (artistbrowse -> unit) -> artistbrowse = "ocaml_spotify_artistbrowse_create"
+external aristbrowse_is_loaded : artistbrowse -> bool = "ocaml_spotify_artistbrowse_is_loaded"
+external artistbrowse_error : artistbrowse -> error = "ocaml_spotify_artistbrowse_error"
+external artistbrowse_artist : artistbrowse -> artist = "ocaml_spotify_artistbrowse_artist"
+external artistbrowse_num_portraits : artistbrowse -> int = "ocaml_spotify_artistbrowse_num_portraits"
+external artistbrowse_portrait : artistbrowse -> int -> string = "ocaml_spotify_artistbrowse_portrait"
+external artistbrowse_num_tracks : artistbrowse -> int = "ocaml_spotify_artistbrowse_num_tracks"
+external artistbrowse_track : artistbrowse -> int -> track = "ocaml_spotify_artistbrowse_track"
+external artistbrowse_num_albums : artistbrowse -> int = "ocaml_spotify_artistbrowse_num_albums"
+external artistbrowse_album : artistbrowse -> int -> album = "ocaml_spotify_artistbrowse_album"
+external artistbrowse_num_similar_artists : artistbrowse -> int = "ocaml_spotify_artistbrowse_num_similar_artists"
+external artistbrowse_similar_artist : artistbrowse -> int -> artist = "ocaml_spotify_artistbrowse_similar_artist"
+external artistbrowse_biography : artistbrowse -> string = "ocaml_spotify_artistbrowse_biography"
+external artistbrowse_release : artist -> unit = "ocaml_spotify_artistbrowse_release"
+
+(* +-----------------------------------------------------------------+
    | Search subsystem                                                |
    +-----------------------------------------------------------------+ *)
 

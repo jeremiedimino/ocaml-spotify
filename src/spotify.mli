@@ -1425,6 +1425,148 @@ val albumbrowse_release : album -> unit
   (** Destroy the reference to the albumbrowse. Any subsequent
       operation on the albumbrowse will raise {!NULL}. *)
 
+(** {6 Artist browsing}
+
+    Artist browsing initiates the fetching of information for a
+    certain artist.
+
+    Note: There is currently no built-in functionality available for
+    getting the albums belonging to an artist. For now, just iterate
+    over all tracks and note the album to build a list of all albums.
+    This feature will be added in a future version of the library.
+*)
+
+val artistbrowse_create : session -> artist -> (artistbrowse -> unit) -> artistbrowse
+  (** Initiate a request for browsing an artist.
+
+      @param session Session object
+      @param artist Artist to be browsed. The artist metadata does not
+      have to be loaded
+      @param callback Callback to be invoked when browsing has been
+      completed.
+
+      @return Artist browse object
+  *)
+
+val aristbrowse_is_loaded : artistbrowse -> bool
+  (** Check if an artist browse request is completed
+
+      @param arb Artist browse object
+
+      @return [true] if browsing is completed, [false] if not
+  *)
+
+val artistbrowse_error : artistbrowse -> error
+  (** Check if browsing returned an error code.
+
+      @param arb Artist browse object
+
+      @return One of the following errors:
+      - {!ERROR_OK}
+      - {!ERROR_IS_LOADING}
+      - {!ERROR_OTHER_PERMANENT}
+      - {!ERROR_OTHER_TRANSIENT}
+  *)
+
+val artistbrowse_artist : artistbrowse -> artist
+  (** Given an artist browse object, return to its artist object.
+
+      @param arb Artist browse object
+
+      @return Artist object
+  *)
+
+val artistbrowse_num_portraits : artistbrowse -> int
+  (** Given an artist browse object, return number of portraits
+      available.
+
+      @param arb Artist browse object
+
+      @return Number of portraits for given artist
+  *)
+
+val artistbrowse_portrait : artistbrowse -> int -> string
+  (** Return image ID representing a portrait of the artist.
+
+      @param arb Artist object
+      @param index The index of the portrait. Should be in the
+      interval [0 .. artistbrowse_num_portraits () - 1]
+
+      @return ID byte sequence that can be passed to {!image_create}
+
+      See {!image_create}
+  *)
+
+val artistbrowse_num_tracks : artistbrowse -> int
+  (** Given an artist browse object, return number of tracks.
+
+      @param arb Artist browse object
+
+      @return Number of tracks for given artist
+  *)
+
+val artistbrowse_track : artistbrowse -> int -> track
+  (** Given an artist browse object, return one of its tracks.
+
+      @param arb Album browse object
+      @param index The index for the track. Should be in the interval
+      [0 .. artistbrowse_num_tracks - 1]
+
+      @return A track object, or NULL if the index is out of range.
+  *)
+
+val artistbrowse_num_albums : artistbrowse -> int
+  (** Given an artist browse object, return number of albums.
+
+      @param arb Artist browse object
+
+      @return Number of albums for given artist
+  *)
+
+val artistbrowse_album : artistbrowse -> int -> album
+  (** Given an artist browse object, return one of its albums.
+
+      @param arb Album browse object
+
+      @param index The index for the album. Should be in the interval
+      [0 .. artistbrowse_num_albums () - 1]
+
+      @return An album object, or NULL if the index is out of range.
+  *)
+
+val artistbrowse_num_similar_artists : artistbrowse -> int
+  (** Given an artist browse object, return number of similar artists.
+
+      @param arb Artist browse object
+
+      @return Number of similar artists for given artist
+  *)
+
+val artistbrowse_similar_artist : artistbrowse -> int -> artist
+  (** Given an artist browse object, return a similar artist by index.
+
+      @param arb Album browse object
+      @param index The index for the artist. Should be in the interval
+      [0 .. artistbrowse_num_similar_artists () - 1]
+
+      @return An artist object.
+  *)
+
+val artistbrowse_biography : artistbrowse -> string
+  (** Given an artist browse object, return the artists biography.
+
+      Note: This function must be called from the same thread that did
+      {!session_create}.
+
+      @param arb Artist browse object
+
+      @return Biography string in UTF-8 format.
+  *)
+
+val artistbrowse_release : artist -> unit
+  (** Destroy the reference to the artistbrowse. Any subsequent
+      operation on the artistbrowse will raise {!NULL}. *)
+
 (** {6 Search subsystem} *)
 
 (** List of genres for radio query. *)
