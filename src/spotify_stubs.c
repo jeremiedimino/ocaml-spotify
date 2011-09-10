@@ -102,7 +102,6 @@ static long spotify_hash(value x)
 #define Artist_val(v) *(sp_artist **)Data_custom_val(v)
 #define Toplistbrowse_val(v) *(sp_toplistbrowse **)Data_custom_val(v)
 #define Link_val(v) *(sp_link **)Data_custom_val(v)
-#define Image_val(v) *(sp_image **)Data_custom_val(v)
 #define User_val(v) *(sp_user **)Data_custom_val(v)
 #define Playlist_val(v) *(sp_playlist **)Data_custom_val(v)
 #define Playlistcontainer_val(v) *(sp_playlistcontainer **)Data_custom_val(v)
@@ -113,7 +112,6 @@ DEFINE_OPS(album, "spotify:album")
 DEFINE_OPS(artist, "spotify:artist")
 DEFINE_OPS(toplistbrowse, "spotify:toplistbrowse")
 DEFINE_OPS(link, "spotify:link")
-DEFINE_OPS(image, "spotify:image")
 DEFINE_OPS(user, "spotify:user")
 DEFINE_OPS(playlist, "spotify:playlist")
 DEFINE_OPS(playlistcontainer, "spotify:playlistcontainer")
@@ -174,6 +172,61 @@ static sp_session *get_session(value x)
 DEFINE_OPS_WITH_CALLBACK(search, "spotify:search")
 DEFINE_OPS_WITH_CALLBACK(albumbrowse, "spotify:albumbrowse")
 DEFINE_OPS_WITH_CALLBACK(artistbrowse, "spotify:artistbrowse")
+
+#define Image_val(v) *(struct image **)Data_custom_val(v)
+
+struct image_callbacks {
+  value callback;
+  value image;
+  struct image_callbacks *next;
+};
+
+struct image {
+  sp_image *sp_image;
+  struct image_callbacks *callbacks;
+  value image;
+};
+
+static void image_finalize(value x)
+{
+  struct image *image = Image_val(x);
+  if (image) {
+    caml_remove_generational_global_root(&(image->image));
+    struct image_callbacks *node = image->callbacks;
+    while (node) {
+      caml_remove_generational_global_root(&(node->callback));
+      caml_remove_generational_global_root(&(node->image));
+      struct image_callbacks *next = node->next;
+      free(node);
+      node = next;
+    }
+    sp_image_release(image->sp_image);
+    free(image);
+  }
+}
+
+static struct custom_operations image_ops = {
+  "spotify:image",
+  image_finalize,
+  spotify_compare,
+  spotify_hash,
+  custom_serialize_default,
+  custom_deserialize_default
+};
+
+static value alloc_image(struct image *image)
+{
+  value x = caml_alloc_custom(&image_ops, sizeof(struct image *), 0, 1);
+  Image_val(x) = image;
+  return x;
+}
+
+static struct image *get_image(value x)
+{
+  struct image *image = Image_val(x);
+  if (image == NULL) caml_raise(*caml_named_value("spotify:null"));
+  return image;
+}
 
 /* +-----------------------------------------------------------------+
    | Error handling                                                  |
@@ -749,7 +802,7 @@ CAMLprim value ocaml_spotify_link_create_from_user(value user)
 
 CAMLprim value ocaml_spotify_link_create_from_image(value image)
 {
-  return alloc_link(sp_link_create_from_image(get_image(image)));
+  return alloc_link(sp_link_create_from_image(get_image(image)->sp_image));
 }
 
 CAMLprim value ocaml_spotify_link_as_string(value link)
@@ -1010,10 +1063,11 @@ static void albumbrowse_complete(sp_albumbrowse *result, void *userdata)
   LEAVE_CALLBACK;
 }
 
-CAMLprim value ocaml_spotify_albumbrowse_create(value session, value album, value callback)
+CAMLprim value ocaml_spotify_albumbrowse_create(value val_session, value album, value callback)
 {
+  sp_session *session = get_session(val_session);
   struct albumbrowse *albumbrowse = new(struct albumbrowse);
-  sp_albumbrowse *sp_albumbrowse = sp_albumbrowse_create(get_session(session),
+  sp_albumbrowse *sp_albumbrowse = sp_albumbrowse_create(session,
                                                          Album_val(album),
                                                          albumbrowse_complete,
                                                          (void*)albumbrowse);
@@ -1099,13 +1153,14 @@ static void artistbrowse_complete(sp_artistbrowse *result, void *userdata)
   LEAVE_CALLBACK;
 }
 
-CAMLprim value ocaml_spotify_artistbrowse_create(value session, value artist, value callback)
+CAMLprim value ocaml_spotify_artistbrowse_create(value val_session, value artist, value callback)
 {
+  sp_session *session = get_session(val_session);
   struct artistbrowse *artistbrowse = new(struct artistbrowse);
-  sp_artistbrowse *sp_artistbrowse = sp_artistbrowse_create(get_session(session),
-                                                         Artist_val(artist),
-                                                         artistbrowse_complete,
-                                                         (void*)artistbrowse);
+  sp_artistbrowse *sp_artistbrowse = sp_artistbrowse_create(session,
+                                                            Artist_val(artist),
+                                                            artistbrowse_complete,
+                                                            (void*)artistbrowse);
   artistbrowse->sp_artistbrowse = sp_artistbrowse;
   artistbrowse->callback = callback;
   artistbrowse->artistbrowse = alloc_artistbrowse(artistbrowse);
@@ -1193,6 +1248,115 @@ CAMLprim value ocaml_spotify_artistbrowse_release(value artistbrowse)
 }
 
 /* +-----------------------------------------------------------------+
+   | Image handling                                                  |
+   +-----------------------------------------------------------------+ */
+
+CAMLprim value ocaml_spotify_image_create(value val_session, value id)
+{
+  sp_session *session = get_session(val_session);
+  struct image *image = new(struct image);
+  image->sp_image = sp_image_create(session, (byte*)String_val(id));
+  image->callbacks = NULL;
+  image->image = alloc_image(image);
+  return image->image;
+}
+
+CAMLprim value ocaml_spotify_image_create_from_link(value val_session, value val_link)
+{
+  sp_session *session = get_session(val_session);
+  sp_link *link = get_link(val_link);
+  struct image *image = new(struct image);
+  image->sp_image = sp_image_create_from_link(session, link);
+  image->callbacks = NULL;
+  image->image = alloc_image(image);
+  return image->image;
+}
+
+static void load_image_complete(sp_image *image, void *userdata)
+{
+  ENTER_CALLBACK;
+  struct image_callbacks *node = (struct image_callbacks *)userdata;
+  caml_callback(node->callback, node->image);
+  LEAVE_CALLBACK;
+}
+
+CAMLprim value ocaml_spotify_image_add_load_callback(value val_image, value callback)
+{
+  struct image *image = get_image(val_image);
+  struct image_callbacks *node = new(struct image_callbacks);
+  node->image = image->image;
+  node->callback = callback;
+  node->next = image->callbacks;
+  image->callbacks = node;
+  caml_register_generational_global_root(&(node->image));
+  caml_register_generational_global_root(&(node->callback));
+  sp_image_add_load_callback(image->sp_image, load_image_complete, (void*)node);
+  return caml_copy_nativeint((intnat)&node);
+}
+
+CAMLprim value ocaml_spotify_image_remove_load_callback(value val_image, value id)
+{
+  struct image *image = get_image(val_image);
+  struct image_callbacks *callback = (struct image_callbacks*)Nativeint_val(id);
+  struct image_callbacks *node = image->callbacks;
+  struct image_callbacks **cell = &(image->callbacks);
+  while (node) {
+    if (node == callback) {
+      sp_image_remove_load_callback(image->sp_image, load_image_complete, (void*)node);
+      caml_remove_generational_global_root(&(node->callback));
+      caml_remove_generational_global_root(&(node->image));
+      *cell = node->next;
+      free(node);
+      Nativeint_val(id) = 0;
+      break;
+    }
+    cell = &(node->next);
+    node = node->next;
+  }
+  return Val_unit;
+}
+
+CAMLprim value ocaml_spotify_image_is_loaded(value image)
+{
+  return Val_bool(sp_image_is_loaded(get_image(image)->sp_image));
+}
+
+CAMLprim value ocaml_spotify_image_error(value image)
+{
+  return Val_int(sp_image_error(get_image(image)->sp_image));
+}
+
+CAMLprim value ocaml_spotify_image_format(value image)
+{
+  return Val_int(sp_image_format(get_image(image)->sp_image) + 1);
+}
+
+CAMLprim value ocaml_spotify_image_data(value image)
+{
+  size_t size;
+  const void *data = sp_image_data(get_image(image)->sp_image, &size);
+  intnat dim[1];
+  dim[0] = size;
+  value x = caml_ba_alloc(CAML_BA_UINT8 | CAML_BA_C_LAYOUT | CAML_BA_EXTERNAL, 1, (void*)data, dim);
+  return x;
+}
+
+CAMLprim value ocaml_spotify_image_image_id(value image)
+{
+  const byte *id = sp_image_image_id(get_image(image)->sp_image);
+  value str = caml_alloc_string(20);
+  memcpy(String_val(str), id, 20);
+  return str;
+}
+
+CAMLprim value ocaml_spotify_image_release(value image)
+{
+  image_finalize(image);
+  Image_val(image) = NULL;
+  return Val_unit;
+}
+
+/* +-----------------------------------------------------------------+
    | Search subsystem                                                |
    +-----------------------------------------------------------------+ */
 
@@ -1204,10 +1368,11 @@ static void search_complete(sp_search *result, void *userdata)
   LEAVE_CALLBACK;
 }
 
-CAMLprim value ocaml_spotify_search_create(value session, value query, value track_offset, value track_count, value album_offset, value album_count, value artist_offset, value artist_count, value callback)
+CAMLprim value ocaml_spotify_search_create(value val_session, value query, value track_offset, value track_count, value album_offset, value album_count, value artist_offset, value artist_count, value callback)
 {
+  sp_session *session = get_session(val_session);
   struct search *search = new(struct search);
-  sp_search *sp_search = sp_search_create(get_session(session),
+  sp_search *sp_search = sp_search_create(session,
                                           String_val(query),
                                           Int_val(track_offset),
                                           Int_val(track_count),
@@ -1230,15 +1395,16 @@ CAMLprim value ocaml_spotify_search_create_byte(value *argv, int argn)
   return ocaml_spotify_search_create(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8]);
 }
 
-CAMLprim value ocaml_spotify_radio_search_create(value session, value from_year, value to_year, value list, value callback)
+CAMLprim value ocaml_spotify_radio_search_create(value val_session, value from_year, value to_year, value list, value callback)
 {
+  sp_session *session = get_session(val_session);
   sp_radio_genre genres = 0;
   while (Is_block(list)) {
     genres |= 1 << Int_val(Field(list, 0));
     list = Field(list, 1);
   }
   struct search *search = new(struct search);
-  sp_search *sp_search = sp_radio_search_create(get_session(session),
+  sp_search *sp_search = sp_radio_search_create(session,
                                                 Int_val(from_year),
                                                 Int_val(to_year),
                                                 genres,

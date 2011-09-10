@@ -381,6 +381,26 @@ external artistbrowse_biography : artistbrowse -> string = "ocaml_spotify_artist
 external artistbrowse_release : artist -> unit = "ocaml_spotify_artistbrowse_release"
 
 (* +-----------------------------------------------------------------+
+   | Image handling                                                  |
+   +-----------------------------------------------------------------+ *)
+
+type image_format =
+  | IMAGE_FORMAT_UNKNOWN
+  | IMAGE_FORMAT_JPEG
+
+external image_create : session -> string -> image = "ocaml_spotify_image_create"
+external image_create_from_link : session -> link -> image = "ocaml_spotify_image_create_from_link"
+type image_load_callback_id
+external image_add_load_callback : image -> (image -> unit) -> image_load_callback_id = "ocaml_spotify_image_add_load_callback"
+external image_remove_load_callback : image -> image_load_callback_id -> unit = "ocaml_spotify_image_remove_load_callback"
+external image_is_loaded : image -> bool = "ocaml_spotify_image_is_loaded"
+external image_error : image -> error = "ocaml_spotify_image_error"
+external image_format : image -> image_format = "ocaml_spotify_image_format"
+external image_data : image -> bytes = "ocaml_spotify_image_data"
+external image_image_id : image -> string = "ocaml_spotify_image_image_id"
+external image_release : artist -> unit = "ocaml_spotify_image_release"
+
+(* +-----------------------------------------------------------------+
    | Search subsystem                                                |
    +-----------------------------------------------------------------+ *)
 

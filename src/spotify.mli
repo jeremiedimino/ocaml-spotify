@@ -1567,6 +1567,110 @@ val artistbrowse_release : artist -> unit
   (** Destroy the reference to the artistbrowse. Any subsequent
       operation on the artistbrowse will raise {!NULL}. *)
 
+(** {6 Image handling} *)
+
+(** Image format. *)
+type image_format =
+  | IMAGE_FORMAT_UNKNOWN
+      (** Unknown image format. *)
+  | IMAGE_FORMAT_JPEG
+      (** JPEG image. *)
+
+val image_create : session -> string -> image
+  (** Create an image object.
+
+      @param session Session
+      @param image_id Spotify image ID
+
+      @return An image object.
+
+      See {!album_cover}.
+      See {!artistbrowse_portrait}.
+  *)
+
+val image_create_from_link : session -> link -> image
+  (** Create an image object from a link.
+
+      @param session Session
+      @param l Spotify link object. This must be of {!LINKTYPE_IMAGE}
+      type.
+
+      @return An image object.
+
+      See {!image_create}.
+  *)
+
+type image_load_callback_id
+  (** Id of a load image callback. Used to remove the callback. *)
+
+val image_add_load_callback : image -> (image -> unit) -> image_load_callback_id
+  (** Add a callback that will be invoked when the image is loaded.
+
+      If an image is loaded, and loading fails, the image will behave
+      like an empty image.
+
+      @param image Image object
+      @param callback Callback that will be called when image has been
+      fetched. *)
+
+val image_remove_load_callback : image -> image_load_callback_id -> unit
+  (** Remove an image load callback previously added with
+      {!image_add_load_callback}.
+
+      @param image Image object
+      @param callback Callback that will not be called when image has
+      been fetched.
+  *)
+
+val image_is_loaded : image -> bool
+  (** Check if an image is loaded. Before the image is loaded, the
+      rest of the methods will behave as if the image is empty.
+
+      @param image Image object
+
+      @return [true] if image is loaded, [false] otherwise
+  *)
+
+val image_error : image -> error
+  (** Check if image retrieval returned an error code.
+
+      @param image Image object
+
+      @return One of the following errors:
+      - {!ERROR_OK}
+      - {!ERROR_IS_LOADING}
+      - {!ERROR_OTHER_PERMANENT}
+      - {!ERROR_OTHER_TRANSIENT}
+  *)
+
+val image_format : image -> image_format
+  (** Get image format.
+
+      @param image Image object
+
+      @return Image format as described by {!image_format}.
+  *)
+
+val image_data : image -> bytes
+  (** Get image data.
+
+      @param image Image object
+
+      @return Raw image data
+  *)
+
+val image_image_id : image -> string
+  (** Get image ID.
+
+      @param image Image object
+
+      @return Image ID
+  *)
+
+val image_release : artist -> unit
+  (** Destroy the reference to the image. Any subsequent operation on
+      the image will raise {!NULL}. *)
+
 (** {6 Search subsystem} *)
 
 (** List of genres for radio query. *)
